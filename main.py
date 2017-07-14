@@ -14,6 +14,9 @@ import speech_recognition as sr
 from urllib2 import urlopen
 import pyaudio  
 import wave
+import shutil
+import subprocess
+from os import listdir
 
 r = sr.Recognizer()
 r.energy_threshold = 4000
@@ -39,50 +42,59 @@ def GetVoice(text):
 
 
 def PlaySong():
+	AllSongNames = ''
 	playSound('What song would you like to play?')
 	SongName = GetVoice('Say the name of the song Outloud')
-	url = 'https://www.youtube.com/results?search_query=' + SongName.replace(' ', '%20')
-	content = urlopen(url).read()
-	htmlSoup = soup(content, "lxml")
-	tag = htmlSoup.find('a', {'rel': 'spf-prefetch'})
-	title = tag.text
-	playSound('Would you like to play' + title)
-	YesNo = GetVoice('Answer Yes or No')
-	renamed = tag.get('href')
-	video_url = 'http://www.youtube.com/' + tag.get('href')
-	renamed = renamed.replace('watch?v=','')
-	renamed = renamed.replace('/','')
-	print(renamed)
-	if YesNo == 'yes':
-		ydl_opts = {
-			'format': 'bestaudio/best',
-			'postprocessors': [{
-			'key': 'FFmpegExtractAudio',
-			'preferredcodec': 'wav',
-			'preferredquality': '192',
-			}],
-		}
-		with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-			ydl.download([video_url])
-		print('Playing: ' + SongName + '\n')
-		filename = title + '-' + renamed + '.wav'
-		print("Filename: " + filename)
-		f = wave.open(filename,"rb")  
-		p = pyaudio.PyAudio()  
-		stream = p.open(format = p.get_format_from_width(f.getsampwidth()),  
-		                channels = f.getnchannels(),  
-		                rate = f.getframerate(),  
-		                output = True)  
-		data = f.readframes(chunk)  
-		while data:  
-		    stream.write(data)  
-		    data = f.readframes(chunk)   
-		stream.stop_stream()  
-		stream.close()  
-		p.terminate() 
-		os.remove(filename)
+	if 'playlist' in SongName:
+		AllSongNames = listdir('Songs')
+		for SingleSongs in AllSongNames:
+			print("Currently Playing - " + str(SingleSongs))
+			subprocess.call(['vlc', '-vvv', 'Songs/' + str(SingleSongs)])
+	elif 'play all' in SongName:
+		AllSongNames = listdir('Songs')
+		for SingleSongs in AllSongNames:
+			print("Currently Playing - " + str(SingleSongs))
+			subprocess.call(['vlc', '-vvv', 'Songs/' + str(SingleSongs)])
 	else:
-		playSound('I will not play ' + SongName)
-
+		AddPlaylistBool = GetVoice('Would you like to add ' + str(SongName) + ' to your playlist?')
+		if AddPlaylistBool == 'yes':
+			AddPlaylistBool = True
+			playSound("Ok, this song will be added to your playlist")
+		else:
+			AddPlaylistBool = False
+			playSound("Ok, I will not add this to your playlist")
+		url = 'https://www.youtube.com/results?search_query=' + SongName.replace(' ', '%20')
+		content = urlopen(url).read()
+		htmlSoup = soup(content, "lxml")
+		tag = htmlSoup.find('a', {'rel': 'spf-prefetch'})
+		title = tag.text
+		playSound('Would you like to play' + title)
+		YesNo = GetVoice('Answer Yes or No')
+		renamed = tag.get('href')
+		video_url = 'http://www.youtube.com/' + tag.get('href')
+		renamed = renamed.replace('watch?v=','')
+		renamed = renamed.replace('/','')
+		print(renamed)
+		if YesNo == 'yes':
+			ydl_opts = {
+				'format': 'bestaudio/best',
+				'postprocessors': [{
+				'key': 'FFmpegExtractAudio',
+				'preferredcodec': 'wav',
+				'preferredquality': '192',
+				}],
+			}
+			with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+				ydl.download([video_url])
+			print('Playing: ' + SongName + '\n')
+			filename = title + '-' + renamed + '.wav'
+			try:
+				print("Filename: " + filename)
+			except:
+				pass
+			shutil.move(filename, "Songs/")
+			if AddPlaylistBool != True:
+				os.remove('Songs/' + str(filename))
+			subprocess.call(['vlc', '-vvv', 'Songs/' + str(filename)])
 
 PlaySong()
