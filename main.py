@@ -47,9 +47,15 @@ def PlaySong():
 	SongName = GetVoice('Say the name of the song Outloud')
 	if 'playlist' in SongName:
 		AllSongNames = listdir('Songs')
-		for SingleSongs in AllSongNames:
-			print("Currently Playing - " + str(SingleSongs))
-			subprocess.call(['vlc', '-vvv', 'Songs/' + str(SingleSongs)])
+		if 'loop' in SongName:
+			while True:
+				for SingleSongs in AllSongNames:
+					print("Currently Playing - " + str(SingleSongs))
+					subprocess.call(['vlc', '-vvv', 'Songs/' + str(SingleSongs)])
+		else:
+			for SingleSongs in AllSongNames:
+				print("Currently Playing - " + str(SingleSongs))
+				subprocess.call(['vlc', '-vvv', 'Songs/' + str(SingleSongs)])
 	elif 'play all' in SongName:
 		AllSongNames = listdir('Songs')
 		for SingleSongs in AllSongNames:
@@ -57,7 +63,7 @@ def PlaySong():
 			subprocess.call(['vlc', '-vvv', 'Songs/' + str(SingleSongs)])
 	else:
 		AddPlaylistBool = GetVoice('Would you like to add ' + str(SongName) + ' to your playlist?')
-		if AddPlaylistBool == 'yes':
+		if 'yes' in AddPlaylistBool:
 			AddPlaylistBool = True
 			playSound("Ok, this song will be added to your playlist")
 		else:
@@ -75,7 +81,7 @@ def PlaySong():
 		renamed = renamed.replace('watch?v=','')
 		renamed = renamed.replace('/','')
 		print(renamed)
-		if YesNo == 'yes':
+		if 'yes' in YesNo:
 			ydl_opts = {
 				'format': 'bestaudio/best',
 				'postprocessors': [{
